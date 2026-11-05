@@ -47,3 +47,4 @@ Kopf des Skripts `fritzbox-syslog.sh`. Kurzfassung:
 - **Filter:** `IGNORE_PATTERNS` im Python-Teil des Skripts (Regex-Liste)
 
 ## Ausgabeformat
+- Text
