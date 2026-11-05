@@ -1,15 +1,24 @@
 #!/bin/bash
 #
-# Name:         fritzbox-syslog.sh
-# Pfad:         /usr/local/bin/fritzbox-syslog.sh
-# Zweck:        Holt Logs und Anrufe von der FRITZ!Box per HTTP-API
-#               und schreibt sie in ein lokales Logfile.
-# Aufruf:       Wird per systemd-Timer alle 5 Minuten gestartet.
+# Pfad/Name: /usr/local/bin/fritzbox-syslog.sh
+# Zweck:     Holt Logs und Anrufe von der FRITZ!Box per HTTP-API
+#            und schreibt sie in ein lokales Logfile.
+# Aufruf:    Wird per systemd-Timer alle 5 Minuten gestartet.
+# Hinweis:   Dieses Script wurde ausschließlich für Linux Lite 8.0
+#            als VM auf Proxmox Virtual Environment 9.2.25 und
+#            Zugriff auf Fritzbox 7490 erstellt und getestet.
+# Erstellt:  mit Hilfe https://chat.deepseek.com/
+# Lizenz:    Jeder darf das Script verwenden, anpassen und
+#            alles oder Teile daraus in seinen Scripten verwenden.
+#            Ein Hinweis auf mich ist nicht erforderlich.
+#
+# Fehler und Hinweise bitte an:
+# Andreas Horn <andreas@andreashorn.de>
 #
 # Installation als Dienst:
 #
 # 0. Abhängigkeit installieren (falls nicht vorhanden)
-#  prüfen:
+#  # prüfen:
 #  python3 -c "import requests; print(requests.__version__)"
 #  bei Bedarf installieren:
 #  apt install python3-requests
@@ -23,7 +32,7 @@
 #  chmod 0700 /etc/fritzbox-syslog
 #
 # 2. Login-Datei anlegen
-#  /etc/fritzbox-syslog/credentials
+#  # Datei /etc/fritzbox-syslog/credentials
 #  FBUSER='<Login-Name>'
 #  FBPW='<Login-Passwort>'
 #
@@ -32,12 +41,12 @@
 #
 # 3. Sicherheitstest für Login-Datei
 #  ls -la /etc/fritzbox-syslog/
-#  Ausgabe:
+#  # Ausgabe:
 #  drwx------ 2 root root 4096 ... .
 #  -rw------- 1 root root   XX ... credentials
 #
 # 4. Service-Datei anlegen
-#  /etc/systemd/system/fritzbox-syslog.service
+#  # Datei /etc/systemd/system/fritzbox-syslog.service
 #  [Unit]
 #  Description=Fritzbox Syslog Puller
 #  After=network-online.target
@@ -48,7 +57,7 @@
 #  ExecStart=/bin/sh -c '/usr/local/bin/fritzbox-syslog.sh >> /var/log/fritzbox-syslog/fritzbox.log 2>&1'
 #
 # 5. Timer-Datei anlegen
-#  /etc/systemd/system/fritzbox-syslog.timer
+#  # Datei /etc/systemd/system/fritzbox-syslog.timer
 #  [Unit]
 #  Description=Run fritzbox-syslog.sh every 5 minutes
 #
@@ -61,7 +70,7 @@
 #  WantedBy=timers.target
 #
 # 6. logrotate-Konfiguration
-#  /etc/logrotate.d/fritzbox-syslog
+#  # Datei /etc/logrotate.d/fritzbox-syslog
 #  /var/log/fritzbox-syslog/fritzbox.log {
 #      weekly
 #      rotate 8
@@ -78,7 +87,7 @@
 #  systemctl enable --now fritzbox-syslog.timer
 #  systemctl list-timers fritzbox-syslog.timer
 #
-# Einmal manuell auslösen, um zu sehen, dass es schreibt
+#  # Einmal manuell auslösen, um zu sehen, dass es schreibt
 #  systemctl start fritzbox-syslog.service
 #  tail -20 /var/log/fritzbox-syslog/fritzbox.log
 #
@@ -87,6 +96,40 @@
 #
 # 9. Ansehen des Logs vom Probelauf
 #  tail -f ~/fritzbox-syslog/fritzbox.log
+#
+# 10. Deinstallation
+#  # Timer stoppen und für den nächsten Boot deaktivieren
+#  systemctl stop fritzbox-syslog.timer
+#  systemctl disable fritzbox-syslog.timer
+#
+#  # Den zugehörigen Service (oneshot) stoppen, falls er gerade läuft
+#  systemctl stop fritzbox-syslog.service
+#
+#  # Die beiden Unit-Dateien entfernen
+#  rm /etc/systemd/system/fritzbox-syslog.timer
+#  rm /etc/systemd/system/fritzbox-syslog.service
+#
+#  # systemd anweisen, die Konfiguration neu einzulesen
+#  systemctl daemon-reload
+#
+#  # Kontrolle
+#  systemctl list-timers --all | grep fritzbox
+#  # Es sollte keine Ausgabe mehr erscheinen
+#
+#  # Restliche Dateien und Verzeichnisse aufräumen
+#  rm /usr/local/bin/fritzbox-syslog.sh
+#  rm /etc/logrotate.d/fritzbox-syslog
+#  rm /etc/fritzbox-syslog/credentials
+#  rmdir /etc/fritzbox-syslog
+#  rm /var/lib/fritzbox-syslog/seen.txt
+#  rmdir /var/lib/fritzbox-syslog
+#  # löscht alle gesammelten Fritzbox-Logs, vorher sichern!
+#  rm -r /var/log/fritzbox-syslog
+#  # testen
+#  systemctl list-timers --all | grep fritzbox
+#  ls -d /var/log/fritzbox-syslog /var/lib/fritzbox-syslog /etc/fritzbox-syslog 2>/dev/null
+#  ls /usr/local/bin/fritzbox-syslog.sh 2>/dev/null
+#  rm /root/fritzbox-syslog
 
 set -euo pipefail
 
